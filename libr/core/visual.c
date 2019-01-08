@@ -1864,6 +1864,7 @@ R_API void r_core_visual_browse(RCore *core) {
 		" e  eval var configurations\n"
 		" f  flags\n"
 		" F  functions\n"
+		" g  graph\n"
 		" h  history\n"
 		" i  imports\n"
 		" l  chat logs (previously VT)\n"
@@ -1884,6 +1885,9 @@ R_API void r_core_visual_browse(RCore *core) {
 		r_cons_flush ();
 		char ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
 		switch (ch) {
+		case 'g':
+			r_core_visual_view_graph (core);
+			break;
 		case 'f':
 			r_core_visual_trackflags (core);
 			break;
@@ -3772,15 +3776,26 @@ static void visual_refresh(RCore *core) {
 		}
 		r_cons_gotoxy (0, 0);
 		r_core_visual_title (core, color);
+#if 0
 		vi = r_config_get (core->config, "cmd.vprompt");
 		if (vi) {
-			r_core_cmd (core, vi, 0);
+			char *output = r_core_cmd_str (core, vi);
+			r_cons_strcat_at (output, 10, 5, 20, 20);
+                        free (output);
 		}
+#endif
 	} else {
-		vi = r_config_get (core->config, "cmd.vprompt");
+#if 0
 		if (vi) {
 			r_core_cmd (core, vi, 0);
 		}
+		vi = r_config_get (core->config, "cmd.vprompt");
+		if (vi) {
+			char *output = r_core_cmd_str (core, vi);
+			r_cons_strcat_at (output, 10, 5, 20, 20);
+                        free (output);
+		}
+#endif
 		r_core_visual_title (core, color);
 	}
 	vcmd = r_config_get (core->config, "cmd.visual");
@@ -3840,6 +3855,14 @@ static void visual_refresh(RCore *core) {
 		r_cons_visual_flush ();
 	} else {
 		r_cons_reset ();
+	}
+	vi = r_config_get (core->config, "cmd.vprompt");
+	if (vi) {
+		int cols = r_config_get_i (core->config, "asm.comments");
+		char *output = r_core_cmd_str (core, vi);
+		r_cons_strcat_at (output, cols, 5, 40, 30);
+		free (output);
+		r_cons_flush ();
 	}
 	core->cons->blankline = false;
 	core->cons->blankline = true;
@@ -4000,10 +4023,12 @@ dodo:
 		if (debug) {
 			r_core_cmd (core, ".dr*", 0);
 		}
+#if 0
 		cmdprompt = r_config_get (core->config, "cmd.vprompt");
 		if (cmdprompt && *cmdprompt) {
 			r_core_cmd (core, cmdprompt, 0);
 		}
+#endif
 		core->print->vflush = !skip;
 		visual_refresh (core);
 		if (insert_mode_enabled (core)) {
